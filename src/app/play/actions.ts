@@ -45,6 +45,81 @@ export async function createPlaySession(game: Game): Promise<PublicPlaySession> 
   return finalizeSession(game, toClientState(engineState));
 }
 
+export async function createPlaySessionByGameId(gameId: string): Promise<PublicPlaySession> {
+  const game = await fetchGameById(gameId);
+  if (!game) throw new Error("Game not found.");
+  return createPlaySession(game);
+}
+
+export async function registerPlayer(
+  name: string,
+  email: string,
+): Promise<{ ok: true; playerId: string } | { ok: false; error: string }> {
+  const trimmedName = name.trim();
+  const trimmedEmail = email.trim().toLowerCase();
+
+  if (!trimmedName) return { ok: false, error: "Name is required." };
+  if (!trimmedEmail || !trimmedEmail.includes("@")) {
+    return { ok: false, error: "Valid email is required." };
+  }
+
+  const supabase = createSupabaseClient();
+  const { data: existing, error: lookupError } = await supabase
+    .from("players")
+    .select("id")
+    .eq("email", trimmedEmail)
+    .maybeSingle();
+
+  if (lookupError) return { ok: false, error: lookupError.message };
+
+  if (existing) {
+    const { error: updateError } = await supabase
+      .from("players")
+      .update({ name: trimmedName })
+      .eq("id", existing.id);
+
+    if (updateError) return { ok: false, error: updateError.message };
+    return { ok: true, playerId: existing.id };
+  }
+
+  const { data, error } = await supabase
+    .from("players")
+    .insert({ name: trimmedName, email: trimmedEmail })
+    .select("id")
+    .single();
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, playerId: data.id };
+}
+
+export async function saveGameResult(input: {
+  gameId: string;
+  playerId: string;
+  result: "win" | "lose";
+  attemptsUsed: number;
+  reflectionBuilding: string;
+  reflectionChallenges: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const supabase = createSupabaseClient();
+  const building = input.reflectionBuilding.trim();
+  const challenges = input.reflectionChallenges.trim();
+
+  const { error } = await supabase.from("game_results").upsert(
+    {
+      game_id: input.gameId,
+      player_id: input.playerId,
+      result: input.result,
+      attempts_used: input.attemptsUsed,
+      reflection_building: building || null,
+      reflection_challenges: challenges || null,
+    },
+    { onConflict: "game_id,player_id" },
+  );
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
 export async function submitLetterGuess(
   gameId: string,
   state: ClientGameState,

@@ -1,32 +1,25 @@
 import type { Game } from "@/lib/types";
+import { getNowIsoString } from "@/lib/game/resetDateTime";
 
-/** Today's date as YYYY-MM-DD (local timezone). */
-export function getTodayDateString(date = new Date()): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
+export { getNowIsoString };
 
 /**
- * From a list of games, pick the one that is live today:
- * the latest game whose reset_date is on or before today.
- *
- * Example (today = July 12):
- *   July 3  → Affordance        ✓ eligible
- *   July 10 → Heuristic Eval    ✓ eligible  ← wins (latest)
- *   July 17 → Cognitive Load    ✗ future
+ * From a list of games, pick the one that is live now:
+ * the latest game whose reset_date is on or before the current datetime.
  */
-export function selectActiveGame(games: Game[], today: string): Game | null {
+export function selectActiveGame(games: Game[], nowIso = getNowIsoString()): Game | null {
   let active: Game | null = null;
+  const nowMs = new Date(nowIso).getTime();
 
   for (const game of games) {
-    if (game.reset_date > today) continue;
+    const resetMs = new Date(game.reset_date).getTime();
+    if (resetMs > nowMs) continue;
 
     if (
       !active ||
-      game.reset_date > active.reset_date ||
-      (game.reset_date === active.reset_date && game.created_at > active.created_at)
+      resetMs > new Date(active.reset_date).getTime() ||
+      (resetMs === new Date(active.reset_date).getTime() &&
+        game.created_at > active.created_at)
     ) {
       active = game;
     }

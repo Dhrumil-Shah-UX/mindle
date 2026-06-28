@@ -1,6 +1,6 @@
 import { createSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/create-client";
 import type { Game } from "@/lib/types";
-import { getTodayDateString } from "@/lib/game/getActiveGame";
+import { getNowIsoString } from "@/lib/game/resetDateTime";
 
 export { isSupabaseConfigured };
 
@@ -9,15 +9,15 @@ export function createServerClient() {
 }
 
 /**
- * Returns the game that should be shown today.
- * Queries games where reset_date <= today, picks the latest reset_date.
+ * Returns the game that should be shown now.
+ * Queries games where reset_date <= now, picks the latest reset_date.
  */
-export async function getActiveGame(today = getTodayDateString()): Promise<Game | null> {
+export async function getActiveGame(now = getNowIsoString()): Promise<Game | null> {
   const supabase = createSupabaseClient();
   const { data, error } = await supabase
     .from("games")
     .select("*")
-    .lte("reset_date", today)
+    .lte("reset_date", now)
     .order("reset_date", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(1)

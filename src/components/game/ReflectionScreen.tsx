@@ -1,15 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { saveGameResult } from "@/app/play/actions";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 import { inputClassName } from "@/components/ui/form";
+import type { GameResult } from "@/lib/types";
 
-export function ReflectionScreen() {
+type ReflectionScreenProps = {
+  playerId: string;
+  gameId: string;
+  result: GameResult;
+  attemptsUsed: number;
+};
+
+export function ReflectionScreen({
+  playerId,
+  gameId,
+  result,
+  attemptsUsed,
+}: ReflectionScreenProps) {
   const [reflectionBuilding, setReflectionBuilding] = useState("");
   const [reflectionChallenges, setReflectionChallenges] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -22,7 +37,23 @@ export function ReflectionScreen() {
       return;
     }
 
-    setSubmitted(true);
+    startTransition(async () => {
+      const saveResult = await saveGameResult({
+        gameId,
+        playerId,
+        result,
+        attemptsUsed,
+        reflectionBuilding: building,
+        reflectionChallenges: challenges,
+      });
+
+      if (!saveResult.ok) {
+        setError(saveResult.error);
+        return;
+      }
+
+      setSubmitted(true);
+    });
   }
 
   if (submitted) {
@@ -65,6 +96,7 @@ export function ReflectionScreen() {
           rows={4}
           className={inputClassName}
           placeholder="A feature, flow, prototype, or product…"
+          disabled={isPending}
         />
       </label>
 
@@ -78,11 +110,12 @@ export function ReflectionScreen() {
           rows={4}
           className={inputClassName}
           placeholder="Friction, trade-offs, open questions…"
+          disabled={isPending}
         />
       </label>
 
-      <Button type="submit" fullWidth className="py-4">
-        Done
+      <Button type="submit" fullWidth className="py-4" disabled={isPending}>
+        {isPending ? "Saving…" : "Done"}
       </Button>
     </form>
   );

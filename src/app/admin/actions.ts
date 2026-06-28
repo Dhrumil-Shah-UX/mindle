@@ -2,11 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { assertAdminPassword } from "@/lib/admin/auth";
+import { combineResetDateTime } from "@/lib/game/resetDateTime";
 import { createSupabaseClient } from "@/lib/supabase/create-client";
 
 export type GameFormInput = {
   word: string;
   reset_date: string;
+  reset_time: string;
   hint1: string;
   hint2: string;
   hint3: string;
@@ -14,9 +16,14 @@ export type GameFormInput = {
 };
 
 function toPayload(input: GameFormInput) {
+  const resetAt = combineResetDateTime(input.reset_date, input.reset_time);
+  if (!resetAt) {
+    throw new Error("Invalid reset date or time.");
+  }
+
   return {
     word: input.word.trim().toUpperCase(),
-    reset_date: input.reset_date,
+    reset_date: resetAt,
     hints: [input.hint1.trim(), input.hint2.trim(), input.hint3.trim()],
     lesson: input.lesson.trim(),
   };
@@ -25,6 +32,10 @@ function toPayload(input: GameFormInput) {
 function validate(input: GameFormInput): string | null {
   if (!input.word.trim()) return "UX word is required.";
   if (!input.reset_date) return "Reset date is required.";
+  if (!input.reset_time) return "Reset time is required.";
+  if (!combineResetDateTime(input.reset_date, input.reset_time)) {
+    return "Reset date or time is invalid.";
+  }
   if (!input.hint1.trim() || !input.hint2.trim() || !input.hint3.trim()) {
     return "All three hints are required.";
   }

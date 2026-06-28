@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { MindleGame } from "@/components/game/MindleGame";
+import { PlayGate } from "@/components/game/PlayGate";
 import { Eyebrow, PageShell } from "@/components/ui/PageShell";
-import { createPlaySession } from "@/app/play/actions";
 import { getActiveGame, isSupabaseConfigured } from "@/lib/supabase/server";
 import { formatResetDate } from "@/components/admin/utils";
 
@@ -42,8 +41,6 @@ export default async function PlayPage() {
     );
   }
 
-  const session = await createPlaySession(game);
-
   return (
     <PageShell narrow>
       <header className="mb-10 flex items-start justify-between gap-4">
@@ -56,7 +53,7 @@ export default async function PlayPage() {
         </Link>
       </header>
 
-      <MindleGame session={session} />
+      <PlayGate gameId={game.id} />
     </PageShell>
   );
 }

@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import type { GameFormInput } from "@/app/admin/actions";
 import { createGame, updateGame } from "@/app/admin/actions";
+import { splitResetDateTime } from "@/lib/game/resetDateTime";
 import type { Game } from "@/lib/types";
 import { inputClassName, labelClassName } from "@/components/admin/utils";
 
@@ -16,6 +17,7 @@ type GameFormProps = {
 const emptyForm: GameFormInput = {
   word: "",
   reset_date: "",
+  reset_time: "10:00",
   hint1: "",
   hint2: "",
   hint3: "",
@@ -23,9 +25,11 @@ const emptyForm: GameFormInput = {
 };
 
 function gameToForm(game: Game): GameFormInput {
+  const { date, time } = splitResetDateTime(game.reset_date);
   return {
     word: game.word,
-    reset_date: game.reset_date,
+    reset_date: date,
+    reset_time: time,
     hint1: game.hints[0] ?? "",
     hint2: game.hints[1] ?? "",
     hint3: game.hints[2] ?? "",
@@ -91,15 +95,27 @@ export function GameForm({ editingGame, adminPassword, onCancelEdit, onSaved }: 
         />
       </label>
 
-      <label className="block space-y-2">
-        <span className={labelClassName}>Reset Date</span>
-        <input
-          type="date"
-          value={form.reset_date}
-          onChange={(e) => updateField("reset_date", e.target.value)}
-          className={inputClassName}
-        />
-      </label>
+      <fieldset className="space-y-4">
+        <legend className={labelClassName}>Reset Time</legend>
+        <label className="block space-y-2">
+          <span className="text-sm text-muted">Date</span>
+          <input
+            type="date"
+            value={form.reset_date}
+            onChange={(e) => updateField("reset_date", e.target.value)}
+            className={inputClassName}
+          />
+        </label>
+        <label className="block space-y-2">
+          <span className="text-sm text-muted">Time</span>
+          <input
+            type="time"
+            value={form.reset_time}
+            onChange={(e) => updateField("reset_time", e.target.value)}
+            className={inputClassName}
+          />
+        </label>
+      </fieldset>
 
       <label className="block space-y-2">
         <span className={labelClassName}>Hint 1</span>
