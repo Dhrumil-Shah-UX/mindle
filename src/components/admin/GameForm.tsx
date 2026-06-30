@@ -7,6 +7,11 @@ import { splitResetDateTime } from "@/lib/game/resetDateTime";
 import type { Game } from "@/lib/types";
 import { inputClassName, labelClassName } from "@/components/admin/utils";
 
+const TIMEZONE_OPTIONS =
+  typeof Intl !== "undefined" && "supportedValuesOf" in Intl
+    ? Intl.supportedValuesOf("timeZone")
+    : ["UTC", "America/New_York"];
+
 type GameFormProps = {
   editingGame: Game | null;
   adminPassword: string;
@@ -144,13 +149,20 @@ export function GameForm({ editingGame, adminPassword, onCancelEdit, onSaved }: 
         </label>
         <label className="block space-y-2">
           <span className="text-sm text-muted">Timezone</span>
-          <input
-            type="text"
+          <select
             value={form.reset_timezone}
             onChange={(e) => updateField("reset_timezone", e.target.value)}
             className={inputClassName}
-            placeholder="America/New_York"
-          />
+          >
+            {!TIMEZONE_OPTIONS.includes(form.reset_timezone) && form.reset_timezone && (
+              <option value={form.reset_timezone}>{form.reset_timezone}</option>
+            )}
+            {TIMEZONE_OPTIONS.map((timezone) => (
+              <option key={timezone} value={timezone}>
+                {timezone}
+              </option>
+            ))}
+          </select>
         </label>
       </fieldset>
 
