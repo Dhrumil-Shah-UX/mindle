@@ -2,13 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { assertAdminPassword } from "@/lib/admin/auth";
-import { combineResetDateTime } from "@/lib/game/resetDateTime";
+import { parsePrefilledLetters } from "@/lib/game/engine";
+import { combineResetDateTime, isValidTimeZone } from "@/lib/game/resetDateTime";
 import { createSupabaseClient } from "@/lib/supabase/create-client";
 
 export type GameFormInput = {
   word: string;
   reset_date: string;
   reset_time: string;
+  reset_timezone: string;
+  prefilled_letters: string;
   hint1: string;
   hint2: string;
   hint3: string;
@@ -16,14 +19,20 @@ export type GameFormInput = {
 };
 
 function toPayload(input: GameFormInput) {
-  const resetAt = combineResetDateTime(input.reset_date, input.reset_time);
+  const resetAt = combineResetDateTime(
+    input.reset_date,
+    input.reset_time,
+    input.reset_timezone,
+  );
   if (!resetAt) {
-    throw new Error("Invalid reset date or time.");
+    throw new Error("Invalid reset date, time, or timezone.");
   }
 
   return {
     word: input.word.trim().toUpperCase(),
     reset_date: resetAt,
+    reset_timezone: input.reset_timezone.trim(),
+    prefilled_letters: parsePrefilledLetters(input.prefilled_letters, input.word),
     hints: [input.hint1.trim(), input.hint2.trim(), input.hint3.trim()],
     lesson: input.lesson.trim(),
   };
@@ -33,8 +42,10 @@ function validate(input: GameFormInput): string | null {
   if (!input.word.trim()) return "UX word is required.";
   if (!input.reset_date) return "Reset date is required.";
   if (!input.reset_time) return "Reset time is required.";
-  if (!combineResetDateTime(input.reset_date, input.reset_time)) {
-    return "Reset date or time is invalid.";
+  if (!input.reset_timezone.trim()) return "Reset timezone is required.";
+  if (!isValidTimeZone(input.reset_timezone)) return "Reset timezone is invalid.";
+  if (!combineResetDateTime(input.reset_date, input.reset_time, input.reset_timezone)) {
+    return "Reset date, time, or timezone is invalid.";
   }
   if (!input.hint1.trim() || !input.hint2.trim() || !input.hint3.trim()) {
     return "All three hints are required.";

@@ -17,18 +17,59 @@ export type MindleGameConfig = {
   word: string;
   hints: string[];
   lesson: string;
+  prefilledLetters?: string[];
 };
 
-export function createInitialState({ word, hints, lesson }: MindleGameConfig): MindleGameState {
+function initialGuessedLetters(word: string, prefilledLetters: string[]): Set<string> {
+  const letters = new Set<string>();
+  const normalizedWord = normalizeWord(word).replace(/\s/g, "");
+
+  for (const letter of prefilledLetters) {
+    const normalized = normalizeLetter(letter);
+    if (isValidLetter(normalized) && normalizedWord.includes(normalized)) {
+      letters.add(normalized);
+    }
+  }
+
+  return letters;
+}
+
+export function parsePrefilledLetters(raw: string, word: string): string[] {
+  const normalizedWord = normalizeWord(word).replace(/\s/g, "");
+  const seen = new Set<string>();
+  const letters: string[] = [];
+
+  for (const part of raw.split(/[,\s]+/)) {
+    const normalized = normalizeLetter(part);
+    if (!isValidLetter(normalized) || !normalizedWord.includes(normalized) || seen.has(normalized)) {
+      continue;
+    }
+    seen.add(normalized);
+    letters.push(normalized);
+  }
+
+  return letters;
+}
+
+export function createInitialState({
+  word,
+  hints,
+  lesson,
+  prefilledLetters = [],
+}: MindleGameConfig): MindleGameState {
+  const normalizedWord = normalizeWord(word);
+  const guessedLetters = initialGuessedLetters(normalizedWord, prefilledLetters);
+  const won = isWordComplete(normalizedWord, guessedLetters);
+
   return {
-    word: normalizeWord(word),
+    word: normalizedWord,
     hints,
     lesson,
-    guessedLetters: new Set(),
+    guessedLetters,
     wrongLetters: [],
     revealedHintCount: 0,
     attemptsRemaining: MAX_ATTEMPTS,
-    phase: "playing",
+    phase: won ? "won" : "playing",
   };
 }
 

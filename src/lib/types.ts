@@ -4,6 +4,8 @@ export type Game = {
   hints: string[];
   lesson: string;
   reset_date: string;
+  reset_timezone: string;
+  prefilled_letters: string[];
   created_at: string;
 };
 
@@ -20,6 +22,8 @@ export type GameResultRow = {
   id: string;
   game_id: string;
   player_id: string;
+  player_name: string | null;
+  game_word: string | null;
   result: GameResult;
   attempts_used: number;
   reflection_building: string | null;

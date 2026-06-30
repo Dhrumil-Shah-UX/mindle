@@ -41,6 +41,7 @@ export async function createPlaySession(game: Game): Promise<PublicPlaySession> 
     word: game.word,
     hints: game.hints,
     lesson: game.lesson,
+    prefilledLetters: game.prefilled_letters ?? [],
   });
   return finalizeSession(game, toClientState(engineState));
 }
@@ -104,10 +105,30 @@ export async function saveGameResult(input: {
   const building = input.reflectionBuilding.trim();
   const challenges = input.reflectionChallenges.trim();
 
+  const { data: player, error: playerError } = await supabase
+    .from("players")
+    .select("name")
+    .eq("id", input.playerId)
+    .maybeSingle();
+
+  if (playerError) return { ok: false, error: playerError.message };
+  if (!player) return { ok: false, error: "Player not found." };
+
+  const { data: game, error: gameError } = await supabase
+    .from("games")
+    .select("word")
+    .eq("id", input.gameId)
+    .maybeSingle();
+
+  if (gameError) return { ok: false, error: gameError.message };
+  if (!game) return { ok: false, error: "Game not found." };
+
   const { error } = await supabase.from("game_results").upsert(
     {
       game_id: input.gameId,
       player_id: input.playerId,
+      player_name: player.name.trim(),
+      game_word: game.word.trim().toUpperCase(),
       result: input.result,
       attempts_used: input.attemptsUsed,
       reflection_building: building || null,

@@ -1,5 +1,5 @@
 import { Eyebrow, PageShell } from "@/components/ui/PageShell";
-import { LinkButton } from "@/components/ui/Button";
+import { LandingActions } from "@/components/landing/LandingActions";
 
 export function LandingHero() {
   return (
@@ -18,9 +18,7 @@ export function LandingHero() {
           </div>
         </div>
 
-        <LinkButton href="/play" fullWidth className="py-4 text-base sm:w-auto sm:min-w-[160px]">
-          Play
-        </LinkButton>
+        <LandingActions />
       </div>
     </PageShell>
   );

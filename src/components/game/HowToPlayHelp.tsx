@@ -7,6 +7,7 @@ type HowToPlayHelpProps = {
   open: boolean;
   onOpen: () => void;
   onClose: () => void;
+  className?: string;
 };
 
 const STEPS = [
@@ -17,7 +18,7 @@ const STEPS = [
   "After you finish, complete the short reflection to connect the word to your work.",
 ];
 
-export function HowToPlayHelp({ open, onOpen, onClose }: HowToPlayHelpProps) {
+export function HowToPlayHelp({ open, onOpen, onClose, className = "" }: HowToPlayHelpProps) {
   useEffect(() => {
     if (!open) return;
 
@@ -31,13 +32,9 @@ export function HowToPlayHelp({ open, onOpen, onClose }: HowToPlayHelpProps) {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={onOpen}
-        className="text-sm text-muted transition hover:text-foreground"
-      >
+      <Button type="button" variant="secondary" onClick={onOpen} className={className}>
         How to Play
-      </button>
+      </Button>
 
       {open && (
         <div

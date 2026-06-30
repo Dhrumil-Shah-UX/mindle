@@ -22,7 +22,7 @@ export function ScheduledGamesList({
   const [error, setError] = useState<string | null>(null);
 
   function handleDelete(game: Game) {
-    const label = `${formatResetDate(game.reset_date)} — ${game.word}`;
+    const label = `${formatResetDate(game.reset_date, game.reset_timezone)} — ${game.word}`;
     if (!window.confirm(`Delete "${label}"?`)) return;
 
     setError(null);
@@ -50,7 +50,9 @@ export function ScheduledGamesList({
         {games.map((game) => (
           <li key={game.id} className="flex items-start justify-between gap-4 py-4 first:pt-0 last:pb-0">
             <div>
-              <p className="font-medium text-foreground">{formatResetDate(game.reset_date)}</p>
+              <p className="font-medium text-foreground">
+                {formatResetDate(game.reset_date, game.reset_timezone)}
+              </p>
               <p className="mt-1 font-mono text-sm tracking-wide text-muted">{game.word}</p>
             </div>
             <div className="flex shrink-0 gap-2">

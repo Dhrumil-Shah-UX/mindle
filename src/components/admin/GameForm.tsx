@@ -18,18 +18,33 @@ const emptyForm: GameFormInput = {
   word: "",
   reset_date: "",
   reset_time: "10:00",
+  reset_timezone: "America/New_York",
+  prefilled_letters: "",
   hint1: "",
   hint2: "",
   hint3: "",
   lesson: "",
 };
 
+function getInitialForm(editingGame: Game | null): GameFormInput {
+  if (editingGame) return gameToForm(editingGame);
+
+  const timezone =
+    typeof Intl !== "undefined"
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone
+      : emptyForm.reset_timezone;
+
+  return { ...emptyForm, reset_timezone: timezone };
+}
+
 function gameToForm(game: Game): GameFormInput {
-  const { date, time } = splitResetDateTime(game.reset_date);
+  const split = splitResetDateTime(game.reset_date, game.reset_timezone);
   return {
     word: game.word,
-    reset_date: date,
-    reset_time: time,
+    reset_date: split?.date ?? "",
+    reset_time: split?.time ?? "",
+    reset_timezone: game.reset_timezone,
+    prefilled_letters: game.prefilled_letters.join(", "),
     hint1: game.hints[0] ?? "",
     hint2: game.hints[1] ?? "",
     hint3: game.hints[2] ?? "",
@@ -38,9 +53,7 @@ function gameToForm(game: Game): GameFormInput {
 }
 
 export function GameForm({ editingGame, adminPassword, onCancelEdit, onSaved }: GameFormProps) {
-  const [form, setForm] = useState<GameFormInput>(
-    editingGame ? gameToForm(editingGame) : emptyForm,
-  );
+  const [form, setForm] = useState<GameFormInput>(() => getInitialForm(editingGame));
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -65,7 +78,7 @@ export function GameForm({ editingGame, adminPassword, onCancelEdit, onSaved }: 
       }
 
       if (!isEditing) {
-        setForm(emptyForm);
+        setForm(getInitialForm(null));
       }
       onSaved();
     });
@@ -95,6 +108,20 @@ export function GameForm({ editingGame, adminPassword, onCancelEdit, onSaved }: 
         />
       </label>
 
+      <label className="block space-y-2">
+        <span className={labelClassName}>Prefilled Letters</span>
+        <input
+          type="text"
+          value={form.prefilled_letters}
+          onChange={(e) => updateField("prefilled_letters", e.target.value)}
+          className={inputClassName}
+          placeholder="A, F, E"
+        />
+        <p className="text-xs text-muted">
+          Letters revealed at the start. Separate with commas. Only letters in the word are saved.
+        </p>
+      </label>
+
       <fieldset className="space-y-4">
         <legend className={labelClassName}>Reset Time</legend>
         <label className="block space-y-2">
@@ -113,6 +140,16 @@ export function GameForm({ editingGame, adminPassword, onCancelEdit, onSaved }: 
             value={form.reset_time}
             onChange={(e) => updateField("reset_time", e.target.value)}
             className={inputClassName}
+          />
+        </label>
+        <label className="block space-y-2">
+          <span className="text-sm text-muted">Timezone</span>
+          <input
+            type="text"
+            value={form.reset_timezone}
+            onChange={(e) => updateField("reset_timezone", e.target.value)}
+            className={inputClassName}
+            placeholder="America/New_York"
           />
         </label>
       </fieldset>

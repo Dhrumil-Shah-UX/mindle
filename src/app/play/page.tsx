@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PlayGate } from "@/components/game/PlayGate";
+import { LinkButton } from "@/components/ui/Button";
 import { Eyebrow, PageShell } from "@/components/ui/PageShell";
 import { getActiveGame, isSupabaseConfigured } from "@/lib/supabase/server";
 import { formatResetDate } from "@/components/admin/utils";
@@ -46,11 +47,13 @@ export default async function PlayPage() {
       <header className="mb-10 flex items-start justify-between gap-4">
         <div>
           <Eyebrow>This week</Eyebrow>
-          <p className="mt-2 text-sm text-muted">Live since {formatResetDate(game.reset_date)}</p>
+          <p className="mt-2 text-sm text-muted">
+            Live since {formatResetDate(game.reset_date, game.reset_timezone)}
+          </p>
         </div>
-        <Link href="/" className="text-sm text-muted transition hover:text-foreground">
+        <LinkButton href="/" variant="secondary" className="shrink-0 py-2">
           Exit
-        </Link>
+        </LinkButton>
       </header>
 
       <PlayGate gameId={game.id} />
